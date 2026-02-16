@@ -3,7 +3,6 @@ const router = express.Router();
 const { check, validationResult } = require("express-validator");
 const Review = require("../models/Review");
 const Product = require("../models/Product");
-const { upload } = require("../config/cloudinary"); // ✅ Import Multer setup
 const authMiddleware = require("../middleware/authMiddleware"); // Import the auth middleware
 
 // ✅ Upload Image & Add Product
@@ -62,6 +61,21 @@ router.get("/", async (req, res) => {
   }
 });
 
+// routes/productRoutes.js
+router.get("/search", async (req, res) => {
+  const query = req.query.query?.trim() || "";
+
+  try {
+    const results = await Product.find({
+      name: { $regex: query, $options: "i" }, // case-insensitive search
+    });
+
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ message: "Search failed", error });
+  }
+});
+
 // ✅ Get a Single Product by ID
 router.get("/:id", async (req, res) => {
   try {
@@ -78,49 +92,4 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
-// Add this middleware to the routes that need user authentication
-// Remove the protect middleware, since we're not using JWT for authentication anymore
-router.post('/:id/reviews', async (req, res) => {
-  const { rating, comment, userId, name } = req.body;
-
-  // Check if the required fields are present
-  if (!rating || !comment || !userId || !name) {
-    return res.status(400).json({ message: "Rating, comment, user info are required" });
-  }
-
-  try {
-    // Find the product by ID
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    // Create a new review object
-    const newReview = {
-      rating,
-      comment,
-      userId,
-      name,
-    };
-
-    // Push the new review to the product's reviews array
-    product.reviews.push(newReview);
-    product.numReviews = product.reviews.length;
-    product.rating =
-      product.reviews.reduce((acc, review) => review.rating + acc, 0) /
-      product.reviews.length;
-
-    // Save the updated product
-    await product.save();
-
-    // Return the new review in the response
-    res.status(201).json(newReview);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error adding review" });
-  }
-});
-
-
-
 module.exports = router;

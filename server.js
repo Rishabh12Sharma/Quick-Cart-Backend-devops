@@ -1,30 +1,36 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config(); // Load environment variables
+const dotenv = require("dotenv");
+
+const productRoutes = require("./routes/ProductRoutes");
+const authRoutes = require("./routes/authRoutes");
+const reviewRoutes = require("./routes/ReviewRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ Middleware
 app.use(express.json());
-app.use(cors()); // Enable CORS for frontend communication
+app.use(cors());
 
-// ✅ MongoDB Connection (No Deprecated Options)
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => {
     console.error("❌ MongoDB Connection Error:", err);
-    process.exit(1); // Exit process if DB connection fails
+    process.exit(1);
   });
 
-// ✅ Route Imports
-const productRoutes = require("./routes/ProductRoutes");
-const authRoutes = require("./routes/authRoutes");
-
 // ✅ Routes
+app.use("/api/reviews", reviewRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/orders", orderRoutes);
+
 app.get("/", (req, res) => {
   res.send("🚀 Quick Cart Backend is Running!");
 });

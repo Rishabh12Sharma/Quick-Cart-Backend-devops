@@ -4,17 +4,18 @@ const ReviewSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // reference to the User model
-      required: true,
+      ref: "User", // Reference to the User model
+       
     },
-    name: {  // Store the user's name directly in the review schema
+    name: {
       type: String,
       required: true,
+      trim: true, // Remove leading/trailing spaces from the name
     },
     productId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product", // assuming you have a Product model
-      required: true,
+      ref: "Product",
+      
     },
     rating: {
       type: Number,
@@ -25,6 +26,7 @@ const ReviewSchema = new mongoose.Schema(
     comment: {
       type: String,
       required: true,
+      trim: true, // Remove leading/trailing spaces from the comment
     },
   },
   { timestamps: true }

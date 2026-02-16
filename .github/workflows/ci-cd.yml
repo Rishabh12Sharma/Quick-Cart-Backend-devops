@@ -9,6 +9,69 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      AWS_EKS_CLUSTER: backend-cluster
+
+    steps:
+      # 1️⃣ Checkout code
+      - uses: actions/checkout@v3
+
+      # 2️⃣ Set up Docker
+      - uses: docker/setup-buildx-action@v2
+
+      # 3️⃣ Build Docker image
+      - name: Build Docker image
+        run: docker build -t rishabhsharma12/backend:latest .
+
+      # 4️⃣ Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      # 5️⃣ Push Docker image
+      - name: Push Docker image
+        run: docker push rishabhsharma12/backend:latest
+
+      # 6️⃣ Set up Terraform
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      # 7️⃣ Terraform init & apply
+      - name: Terraform Apply
+        run: |
+          cd infra
+          terraform init
+          terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # 8️⃣ Set up kubectl
+      - name: Configure kubectl
+        uses: aws-actions/eks-kubectl@v2
+        with:
+          cluster-name: ${{ env.AWS_EKS_CLUSTER }}
+          region: ${{ env.AWS_REGION }}
+      
+      # 9️⃣ Deploy backend to Kubernetes
+      - name: Deploy to Kubernetes
+        run: kubectl apply -f k8s/deployment.yaml
 
     steps:
       # 1️⃣ Checkout code
@@ -33,9 +96,9 @@ jobs:
 
       # 3️⃣ Build Docker image
       - name: Build Docker image
-        run: docker build -t rishabhsharma1/backend:latest .
+        run: docker build -t rishabhsharma12/backend:latest .
 
       # 4️⃣ Push Docker image to Docker Hub
       - name: Push Docker image
-        run: docker push rishabhsharma1/backend:latest
+        run: docker push rishabhsharma12/backend:latest
 

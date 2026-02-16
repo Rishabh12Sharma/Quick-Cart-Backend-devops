@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Docker Buildx
+      # 2️⃣ Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -60,17 +60,16 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-      # 9️⃣ Install kubectl
+      # 9️⃣ Install kubectl (official action)
       - name: Install kubectl
-        run: |
-          curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kubectl
-          chmod +x kubectl
-          sudo mv kubectl /usr/local/bin/
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v1.27.1
 
       # 🔟 Update kubeconfig for EKS
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region $AWS_REGION --name $AWS_EKS_CLUSTER
 
-      # 1️⃣1️⃣ Deploy to Kubernetes
+      # 1️⃣1️⃣ Deploy backend to Kubernetes
       - name: Deploy backend to Kubernetes
         run: kubectl apply -f k8s/deployment.yaml

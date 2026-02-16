@@ -1,4 +1,4 @@
-name: Backend CI/CD with Docker, Terraform & Kubernetes
+name: Backend CI/CD Pipeline
 
 on:
   push:
@@ -13,18 +13,19 @@ jobs:
     env:
       AWS_REGION: us-east-1
       AWS_EKS_CLUSTER: backend-cluster
+      IMAGE_NAME: rishabhsharma12/backend:latest
 
     steps:
       # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Setup Docker
+      # 2️⃣ Setup Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       # 3️⃣ Login to Docker Hub
-      - name: Log in to Docker Hub
+      - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -32,35 +33,44 @@ jobs:
 
       # 4️⃣ Build Docker image
       - name: Build Docker image
-        run: docker build -t rishabhsharma12/backend:latest .
+        run: docker build -t $IMAGE_NAME .
 
       # 5️⃣ Push Docker image
       - name: Push Docker image
-        run: docker push rishabhsharma12/backend:latest
+        run: docker push $IMAGE_NAME
 
-      # 6️⃣ Install Terraform
+      # 6️⃣ Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 7️⃣ Install Terraform
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.7
 
-      # 7️⃣ Terraform Init & Apply
+      # 8️⃣ Terraform Init & Apply
       - name: Terraform Apply
         run: |
           cd infra
           terraform init
           terraform apply -auto-approve
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # 8️⃣ Configure kubectl for EKS
-      - name: Configure kubectl
-        uses: aws-actions/eks-kubectl@v2
-        with:
-          cluster-name: ${{ env.AWS_EKS_CLUSTER }}
-          region: ${{ env.AWS_REGION }}
+      # 9️⃣ Install kubectl
+      - name: Install kubectl
+        run: |
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.27.1/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
 
-      # 9️⃣ Deploy backend to Kubernetes
-      - name: Deploy to Kubernetes
+      # 🔟 Update kubeconfig for EKS
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region $AWS_REGION --name $AWS_EKS_CLUSTER
+
+      # 1️⃣1️⃣ Deploy to Kubernetes
+      - name: Deploy backend to Kubernetes
         run: kubectl apply -f k8s/deployment.yaml

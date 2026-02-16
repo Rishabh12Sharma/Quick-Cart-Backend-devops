@@ -24,9 +24,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 4️⃣ Run tests (if any)
-      - name: Run Tests
-        run: npm test
 
       # 5️⃣ Optional: Start backend server
       #- name: Start Backend

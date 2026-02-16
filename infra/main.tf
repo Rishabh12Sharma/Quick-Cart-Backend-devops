@@ -20,7 +20,7 @@ data "aws_subnets" "eks_subnets" {
 }
 
 resource "aws_iam_role" "eks_role" {
-  name = "eks-cluster-role"
+  name = "eks-cluster-role-backend"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

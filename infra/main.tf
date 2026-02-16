@@ -2,20 +2,23 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# Use default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-# Use default subnets
-data "aws_subnets" "default" {
+# Filter only supported AZs
+data "aws_subnets" "eks_subnets" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+
+  filter {
+    name   = "availability-zone"
+    values = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d", "us-east-1f"]
+  }
 }
 
-# IAM role for EKS
 resource "aws_iam_role" "eks_role" {
   name = "eks-cluster-role"
 
@@ -36,13 +39,12 @@ resource "aws_iam_role_policy_attachment" "eks_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-# EKS cluster
 resource "aws_eks_cluster" "backend_cluster" {
   name     = "backend-cluster"
   role_arn = aws_iam_role.eks_role.arn
 
   vpc_config {
-    subnet_ids = data.aws_subnets.default.ids
+    subnet_ids = data.aws_subnets.eks_subnets.ids
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks_policy]

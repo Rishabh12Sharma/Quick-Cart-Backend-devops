@@ -1,4 +1,4 @@
-name: Backend CI
+name: Backend CI with Docker
 
 on:
   push:
@@ -14,17 +14,29 @@ jobs:
       # 1️⃣ Checkout code
       - uses: actions/checkout@v3
 
-      # 2️⃣ Set up Node.js
+      # 2️⃣ Set up Node.js (optional if building Docker)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      # 3️⃣ Install dependencies
+      # 3️⃣ Install dependencies (optional if inside Docker)
       - name: Install Dependencies
         run: npm install
 
+      # 4️⃣ Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-      # 5️⃣ Optional: Start backend server
-      #- name: Start Backend
-      #  run: npm start &
+      # 5️⃣ Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t rishabhsharma/backend:latest ./backend
+
+      # 6️⃣ Push Docker image to Docker Hub
+      - name: Push Docker image
+        run: |
+          docker push rishabhsharma/backend:latest

@@ -30,7 +30,7 @@ jobs:
         run: |
           ls -l
           cat ec2_ip.txt
-
+ 
       - name: Set EC2 IP
         run: echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
 

@@ -3,8 +3,8 @@ provider "aws" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "node-key"
-  public_key = file(var.public_key_path)
+  key_name   = "deployer-key"
+  public_key = var.public_key
 }
 
 resource "aws_security_group" "node_sg" {

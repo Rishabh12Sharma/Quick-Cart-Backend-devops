@@ -10,6 +10,7 @@ variable "instance_type" {
   default = "t2.micro"
 }
 
-variable "public_key_path" {
-  description = "Path to SSH public key"
+variable "public_key" {
+  description = "SSH public key for EC2"
+  type        = string
 }

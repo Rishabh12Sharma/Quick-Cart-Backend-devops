@@ -9,7 +9,7 @@ data "aws_key_pair" "deployer" {
 
 # Use existing security group (do NOT create)
 data "aws_security_group" "node_sg" {
-  name = "node-sg-terraform"
+  name = "node-sg-terraform" 
 }
 
 resource "aws_instance" "node_app" {

@@ -84,11 +84,13 @@ jobs:
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
 
       - name: Deploy on EC2
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.EC2_IP }}
-          username: ubuntu
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          timeout: 30s
           script: |
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
             docker stop node-app || true

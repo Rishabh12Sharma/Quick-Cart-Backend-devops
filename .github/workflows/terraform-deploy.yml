@@ -43,7 +43,7 @@ jobs:
           terraform output -raw ec2_public_ip > ec2_ip.txt
 
       - name: Upload EC2 IP Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ec2-ip-artifact
           path: terraform/ec2_ip.txt

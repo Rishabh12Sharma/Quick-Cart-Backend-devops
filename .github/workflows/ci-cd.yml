@@ -17,7 +17,7 @@ jobs:
 
       # Download EC2 IP artifact from Terraform workflow
       - name: Download EC2 IP artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ec2-ip-artifact
           run-id: ${{ github.event.workflow_run.id }}

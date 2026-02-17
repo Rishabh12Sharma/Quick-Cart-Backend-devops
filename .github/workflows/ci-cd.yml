@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
 
       - uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -29,17 +29,23 @@ jobs:
       - name: Terraform Init
         run: |
           cd terraform
-          terraform init
+          terraform init -reconfigure
 
-      - name: Terraform Apply
+      - name: Terraform Destroy (cleanup old infra)
+        run: |
+          cd terraform
+          terraform destroy -auto-approve || true
+
+      - name: Terraform Apply (fresh deploy)
         run: |
           cd terraform
           terraform apply -auto-approve
 
-      - name: Save EC2 IP
+      - name: Save EC2 IP (clean)
         run: |
           cd terraform
-          terraform output -raw ec2_public_ip > ec2_ip.txt
+          terraform output -raw ec2_public_ip | tr -d '\n' > ec2_ip.txt
+          cat ec2_ip.txt
 
       - name: Upload EC2 IP Artifact
         uses: actions/upload-artifact@v4
@@ -60,9 +66,11 @@ jobs:
           name: ec2-ip-artifact
           path: .
 
-      - name: Set EC2 IP
+      - name: Read EC2 IP safely
         run: |
-          echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
+          IP=$(cat ec2_ip.txt | tr -d '\n')
+          echo "EC2_IP=$IP" >> $GITHUB_ENV
+          echo "Deploying to $IP"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -86,4 +94,4 @@ jobs:
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
             docker stop node-app || true
             docker rm node-app || true
-            docker run -d -p 5000:5000 --name node-app ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
+            docker run -d -p 5000:5000 --restart unless-stopped --name node-app ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest

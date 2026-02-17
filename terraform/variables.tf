@@ -7,7 +7,7 @@ variable "ami_id" {
 }
 
 variable "instance_type" {
-  default = "t3a.micro"
+  default = "t3.micro"
 }
 
 variable "key_pair_name" {

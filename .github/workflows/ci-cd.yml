@@ -1,5 +1,9 @@
 name: Docker Build & Deploy
 
+permissions:
+  actions: read
+  contents: read
+  
 on:
   workflow_run:
     workflows: ["Terraform Infra"]

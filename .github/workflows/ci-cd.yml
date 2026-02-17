@@ -12,18 +12,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      # Download EC2 IP artifact from Terraform workflow
       - name: Download EC2 IP artifact
         uses: actions/download-artifact@v4
         with:
           name: ec2-ip-artifact
-          run-id: ${{ github.event.workflow_run.id }}
           path: .
 
-      - name: Set EC2 IP env
+      - name: Set EC2 IP
         run: |
           echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
 
@@ -34,14 +31,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/node-app:latest .
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/node-app:latest .
 
       - name: Push Docker Image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/node-app:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/node-app:latest
 
-      - name: SSH to EC2 and Deploy Node App
+      - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ env.EC2_IP }}

@@ -2,7 +2,7 @@ name: Terraform Infra
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   terraform:
@@ -12,14 +12,11 @@ jobs:
       TF_VAR_public_key: ${{ secrets.TF_VAR_public_key }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v2
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -30,17 +27,12 @@ jobs:
           cd terraform
           terraform init
 
-      - name: Terraform Plan
-        run: |
-          cd terraform
-          terraform plan
-
       - name: Terraform Apply
         run: |
           cd terraform
           terraform apply -auto-approve
 
-      - name: Get EC2 Public IP
+      - name: Save EC2 IP
         run: |
           cd terraform
           terraform output -raw ec2_public_ip > ec2_ip.txt

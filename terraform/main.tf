@@ -4,7 +4,7 @@ provider "aws" {
 
 # Use existing key pair (do NOT create)
 resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key-terraform"
+  key_name   = "deployer-key-terraform-v2"
   public_key = var.public_key
 }
 

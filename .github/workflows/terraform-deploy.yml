@@ -1,5 +1,9 @@
 name: Terraform Infra
 
+permissions:
+  actions: write
+  contents: read
+
 on:
   push:
     branches: ["main"]
@@ -12,7 +16,7 @@ jobs:
       TF_VAR_public_key: ${{ secrets.TF_VAR_public_key }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: hashicorp/setup-terraform@v2
 

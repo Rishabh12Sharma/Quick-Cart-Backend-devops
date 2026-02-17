@@ -36,10 +36,12 @@ jobs:
           cd terraform
           terraform apply -auto-approve
 
-      - name: Save EC2 IP
+      - name: Save EC2 IP (clean)
         run: |
           cd terraform
-          terraform output -raw ec2_public_ip > ec2_ip.txt
+          terraform output -raw ec2_public_ip | tr -d '\n' > ec2_ip.txt
+          echo "Saved IP:"
+          cat ec2_ip.txt
 
       - name: Upload EC2 IP Artifact
         uses: actions/upload-artifact@v4
@@ -60,13 +62,15 @@ jobs:
           name: ec2-ip-artifact
           path: .
 
-      - name: Debug artifact
+      - name: Read + sanitize EC2 IP
         run: |
-          ls -l
-          cat ec2_ip.txt
-
-      - name: Set EC2 IP
-        run: echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
+          IP=$(cat ec2_ip.txt | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n 1)
+          if [ -z "$IP" ]; then
+            echo "EC2 IP not found in artifact" >&2
+            exit 1
+          fi
+          echo "EC2_IP=$IP" >> $GITHUB_ENV
+          echo "Using EC2 IP: $IP"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2

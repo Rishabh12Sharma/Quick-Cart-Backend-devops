@@ -3,7 +3,7 @@ name: Docker Build & Deploy
 permissions:
   actions: read
   contents: read
-  
+
 on:
   workflow_run:
     workflows: ["Terraform Infra"]
@@ -22,11 +22,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ec2-ip-artifact
+          run-id: ${{ github.event.workflow_run.id }}
+          repository: ${{ github.repository }}
           path: .
 
-      - name: Set EC2 IP
+      - name: Debug artifact
         run: |
-          echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
+          ls -l
+          cat ec2_ip.txt
+
+      - name: Set EC2 IP
+        run: echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
 
       - name: Login to DockerHub
         uses: docker/login-action@v2

@@ -2,28 +2,21 @@ provider "aws" {
   region = var.aws_region
 }
 
-# Use existing key pair (do NOT create)
-resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key-terraform-v2"
-  public_key = var.public_key
-}
-
-# Use existing security group (do NOT create)
 data "aws_security_group" "node_sg" {
-  name = "node-sg-terraform" 
+  name = "node-sg-terraform"
 }
 
 resource "aws_instance" "node_app" {
   ami           = var.ami_id
   instance_type = var.instance_type
 
-  key_name               = aws_key_pair.deployer.key_name
+  key_name               = var.key_pair_name
   vpc_security_group_ids = [data.aws_security_group.node_sg.id]
 
   user_data = <<-EOF
 #!/bin/bash
 sudo apt update -y
-sudo apt install docker.io -y
+sudo apt install -y docker.io
 sudo systemctl start docker
 sudo systemctl enable docker
 sudo usermod -aG docker ubuntu
@@ -33,5 +26,3 @@ EOF
     Name = "Node-App-Server"
   }
 }
-
-

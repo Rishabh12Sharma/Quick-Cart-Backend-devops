@@ -10,9 +10,7 @@ variable "instance_type" {
   default = "t3a.micro"
 }
 
-variable "public_key" {
-  description = "SSH public key for EC2"
+variable "key_pair_name" {
+  description = "Existing EC2 key pair name"
   type        = string
 }
-
- 

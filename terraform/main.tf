@@ -50,4 +50,4 @@ resource "aws_instance" "node_app" {
   tags = {
     Name = "Node-App-Server"
   }
-}
+} 

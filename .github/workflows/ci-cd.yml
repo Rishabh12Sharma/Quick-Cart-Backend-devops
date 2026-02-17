@@ -1,75 +1,53 @@
-name: Backend CI/CD Pipeline
+name: Docker Build & Deploy
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["Terraform Infra"]   # Trigger after Terraform workflow
+    types:
+      - completed
 
 jobs:
-  build-and-deploy:
+  docker-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: us-east-1
-      AWS_EKS_CLUSTER: backend-cluster
-      IMAGE_NAME: rishabhsharma12/backend:latest
-
     steps:
-      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      # Download EC2 IP from Terraform workflow
+      - name: Download EC2 IP artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ec2-ip-artifact
+          path: .
 
-      # 3️⃣ Login to Docker Hub
-      - name: Login to Docker Hub
+      - name: Set EC2 IP env
+        run: |
+          export EC2_IP=$(cat ec2_ip.txt)
+          echo "EC2_IP=$EC2_IP" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 4️⃣ Build Docker image
-      - name: Build Docker image
-        run: docker build -t $IMAGE_NAME .
-
-      # 5️⃣ Push Docker image
-      - name: Push Docker image
-        run: docker push $IMAGE_NAME
-
-      # 6️⃣ Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      # 7️⃣ Install Terraform
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.7
-
-      # 8️⃣ Terraform Init & Apply
-      - name: Terraform Apply
+      - name: Build Docker Image
         run: |
-          cd infra
-          terraform init
-          terraform apply -auto-approve
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/node-app:latest .
 
-      # 9️⃣ Install kubectl (official action)
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Push Docker Image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/node-app:latest
+
+      - name: SSH to EC2 and Deploy Node App
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          version: v1.27.1
-
-      # 🔟 Update kubeconfig for EKS
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region $AWS_REGION --name $AWS_EKS_CLUSTER
-
-      # 1️⃣1️⃣ Deploy backend to Kubernetes
-      - name: Deploy backend to Kubernetes
-        run: kubectl apply -f k8s/deployment.yaml
+          host: ${{ env.EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/node-app:latest
+            docker stop node-app || true
+            docker rm node-app || true
+            docker run -d -p 5000:5000 --name node-app ${{ secrets.DOCKER_USERNAME }}/node-app:latest

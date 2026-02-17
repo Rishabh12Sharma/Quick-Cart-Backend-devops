@@ -95,3 +95,4 @@ jobs:
             docker stop node-app || true
             docker rm node-app || true
             docker run -d -p 5000:5000 --name node-app ${{ secrets.DOCKER_USERNAME }}/node-app:latest
+ 

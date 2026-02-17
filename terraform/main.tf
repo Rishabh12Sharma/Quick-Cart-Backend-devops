@@ -42,11 +42,11 @@ resource "aws_instance" "node_app" {
 
   user_data = <<-EOF
 #!/bin/bash
-sudo apt update -y
-sudo apt install docker.io -y
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker ubuntu
+apt update -y
+apt install docker.io -y
+systemctl start docker
+systemctl enable docker
+usermod -aG docker ubuntu
 EOF
 
   tags = {

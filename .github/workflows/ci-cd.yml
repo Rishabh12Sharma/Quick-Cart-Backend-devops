@@ -8,9 +8,6 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
 
-    env:
-      TF_VAR_public_key: ${{ secrets.TF_VAR_PUBLIC_KEY }}
-
     steps:
       - uses: actions/checkout@v4
 
@@ -27,12 +24,7 @@ jobs:
           cd terraform
           terraform init -reconfigure
 
-      - name: 🔥 Destroy previous infra
-        run: |
-          cd terraform
-          terraform destroy -auto-approve || true
-
-      - name: 🚀 Create infra fresh
+      - name: Terraform Apply
         run: |
           cd terraform
           terraform apply -auto-approve
@@ -83,14 +75,20 @@ jobs:
       - name: Push Docker Image
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
 
+      # IMPORTANT — wait for EC2 boot
+      - name: Wait for EC2 SSH
+        run: sleep 70
+
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ env.EC2_IP }}
-          username: ${{ secrets.EC2_USER }}
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
-          timeout: 30s
+          timeout: 60s
+          command_timeout: 10m
+          script_stop: true
           script: |
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
             docker stop node-app || true

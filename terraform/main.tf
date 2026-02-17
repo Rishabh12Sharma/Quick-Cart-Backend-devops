@@ -3,8 +3,9 @@ provider "aws" {
 }
 
 # Use existing key pair (do NOT create)
-data "aws_key_pair" "deployer" {
-  key_name = "deployer-key-terraform"
+resource "aws_key_pair" "deployer" {
+  key_name   = "deployer-key-terraform"
+  public_key = var.public_key
 }
 
 # Use existing security group (do NOT create)
@@ -16,7 +17,7 @@ resource "aws_instance" "node_app" {
   ami           = var.ami_id
   instance_type = var.instance_type
 
-  key_name = data.aws_key_pair.deployer.key_name
+  key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [data.aws_security_group.node_sg.id]
 
   user_data = <<-EOF

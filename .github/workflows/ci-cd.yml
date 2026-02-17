@@ -1,9 +1,5 @@
 name: Infra + Build + Deploy
 
-permissions:
-  actions: read
-  contents: read
-
 on:
   push:
     branches: ["main"]
@@ -29,9 +25,14 @@ jobs:
       - name: Terraform Init
         run: |
           cd terraform
-          terraform init
+          terraform init -reconfigure
 
-      - name: Terraform Apply
+      - name: 🔥 Destroy previous infra
+        run: |
+          cd terraform
+          terraform destroy -auto-approve || true
+
+      - name: 🚀 Create infra fresh
         run: |
           cd terraform
           terraform apply -auto-approve
@@ -39,7 +40,7 @@ jobs:
       - name: Save EC2 IP
         run: |
           cd terraform
-          terraform output -raw ec2_public_ip | tr -d '\n' > ec2_ip.txt
+          terraform output -raw ec2_public_ip > ec2_ip.txt
 
       - name: Upload EC2 IP Artifact
         uses: actions/upload-artifact@v4
@@ -61,8 +62,7 @@ jobs:
           path: .
 
       - name: Set EC2 IP
-        run: |
-          echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
+        run: echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -80,7 +80,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ env.EC2_IP }}
-          username: ${{ secrets.EC2_USER }}
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest

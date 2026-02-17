@@ -1,18 +1,54 @@
-name: Docker Build & Deploy
+name: Infra + Build + Deploy
 
 permissions:
   actions: read
   contents: read
 
 on:
-  workflow_run:
-    workflows: ["Terraform Infra"]
-    types:
-      - completed
+  push:
+    branches: ["main"]
 
 jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_public_key: ${{ secrets.TF_VAR_public_key }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v2
+
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve
+
+      - name: Save EC2 IP
+        run: |
+          cd terraform
+          terraform output -raw ec2_public_ip > ec2_ip.txt
+
+      - name: Upload EC2 IP Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-ip-artifact
+          path: terraform/ec2_ip.txt
+
   docker-deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: terraform
     runs-on: ubuntu-latest
 
     steps:
@@ -22,15 +58,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ec2-ip-artifact
-          run-id: ${{ github.event.workflow_run.id }}
-          repository: ${{ github.repository }}
           path: .
 
       - name: Debug artifact
         run: |
           ls -l
           cat ec2_ip.txt
- 
+
       - name: Set EC2 IP
         run: echo "EC2_IP=$(cat ec2_ip.txt)" >> $GITHUB_ENV
 

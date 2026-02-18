@@ -4,7 +4,7 @@ provider "aws" {
 
 # Use SAME permanent AWS key
 data "aws_key_pair" "deployer" {
-  key_name = "my-ec2-key"
+  key_name = "EC2_SSH_KEY"
 }
 
 # Existing security group

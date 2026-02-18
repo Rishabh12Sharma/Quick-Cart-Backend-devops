@@ -4,12 +4,12 @@ provider "aws" {
 
 # Use SAME permanent AWS key
 data "aws_key_pair" "deployer" {
-  key_name = "deployer-key-terraform-v2"
+  key_name = "my-ec2-key"
 }
 
 # Existing security group
 data "aws_security_group" "node_sg" {
-  name = "node-sg-terraform"
+  id = "sg-064acc91c4b79bdf3"
 }
 
 resource "aws_instance" "node_app" {

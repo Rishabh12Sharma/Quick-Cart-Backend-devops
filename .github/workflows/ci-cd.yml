@@ -88,7 +88,6 @@ jobs:
           port: 22
           timeout: 60s
           command_timeout: 10m
-          script_stop: true
           script: |
             docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/node-app:latest
             docker stop node-app || true
